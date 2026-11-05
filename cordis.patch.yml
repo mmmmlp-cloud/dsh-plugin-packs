@@ -1,0 +1,18 @@
+# dsh-plugin-packs bundle 补丁：一行双面插件。
+#
+# 宿主 half 在本进程的 web server 上挂同源路由 /plugin-packs/api：
+# 读插件清单、整包启停、读写「哪个包挂了哪些标签」的 JSON。
+# 浏览器 half 只调这些同源路由，不碰远程命名空间（那需要接客户端装配顺序）。
+#
+# 浏览器 half 由 client-modules 扫描本包的 "./client" 导出后归到这一行，
+# 所以 name 必须是本包的根 specifier（写成子路径会扫不到浏览器 half）。
+# 行 id 用短名、与包名解耦，便于日后改名而不动 entry id。
+#
+# 本包是纯增量：它从不替换任何既有行，禁用或删除这一行就是完整的关闸。
+- insert:
+    - id: plugin-packs
+      name: 'dsh-plugin-packs'
+      config:
+        # 标签数据目录。空串 = $DSH_HOME/plugin-packs，经宿主的 dshHomePath()
+        # 解析，这样 profile 搬家时标签跟着走。只有想把数据放到别的盘时才填绝对路径。
+        storageDir: ''

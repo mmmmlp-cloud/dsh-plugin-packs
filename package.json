@@ -1,0 +1,61 @@
+{
+  "name": "dsh-plugin-packs",
+  "version": "0.1.0",
+  "description": "插件包管理器：把 DeepSeek Harness 已安装的插件包排成 Minecraft 资源包式的左右两栏（左「一起用」/右「未启用」），支持自定义标签分类、搜索与范围筛选；标签存文件而非 localStorage。",
+  "type": "module",
+  "license": "MIT",
+  "author": "mmmmlp-cloud",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mmmmlp-cloud/dsh-plugin-packs.git"
+  },
+  "homepage": "https://github.com/mmmmlp-cloud/dsh-plugin-packs#readme",
+  "bugs": {
+    "url": "https://github.com/mmmmlp-cloud/dsh-plugin-packs/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "plugin-manager",
+    "plugin-packs",
+    "resource-packs",
+    "two-column",
+    "tags"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/**/*.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "README.en.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node scripts/render-check.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-plugin-manager"
+      ]
+    }
+  }
+}

@@ -1,0 +1,16 @@
+# 依赖与产物
+node_modules/
+pnpm-lock.yaml
+npm-debug.log*
+*.log
+
+# 本地数据（绝不入库）
+packs.json
+packs.json.broken-*
+
+# 编辑器 / 系统
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

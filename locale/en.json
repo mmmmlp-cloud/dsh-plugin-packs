@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Plugin Packs",
+    "description": "Arrange installed plugin packs into Enabled / Disabled columns (Minecraft resource-pack style) with custom tags for quick finding and whole-pack toggling."
+  }
+}
