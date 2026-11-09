@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![DeepSeek Harness](https://img.shields.io/badge/DeepSeek%20Harness-0.2.x-4C9AFF.svg)](https://github.com/deepseek-ai/deepseek-harness)
-[![version](https://img.shields.io/badge/version-v0.1.0-success.svg)](../../releases)
+[![version](https://img.shields.io/badge/version-v0.3.1-success.svg)](../../releases)
 [![JavaScript](https://img.shields.io/badge/JavaScript-ESM-f7df1e.svg)](lib/client.js)
 [![topic: dsh-plugin](https://img.shields.io/badge/topic-dsh--plugin-7B68EE.svg)](https://github.com/topics/dsh-plugin)
 
@@ -66,8 +66,28 @@ Settings → Plugins. This plugin lives on the **sidebar page**.)
 - **Details**: expand a card for the full description, source, and the pack's plugin rows with their
   running state — plus rename and tag editing. An expanded card spans the full row.
 - **Feedback**: every switch reports its real outcome — applied / needs a dsh restart / overridden by a
-  higher layer / failed, with the error code. The first two offer **Undo**.
+  higher layer / failed, with the error code. Applied changes offer **Undo**, which also runs preflight.
 - **Remembers the tab**: once you pick 「插件包」, switching away and back in the same session stays there.
+
+## Health and risk checks (0.2.0)
+
+Open the tab or choose **Check all** to read a fresh inventory. Cards distinguish loaded, problem, risk, unverified and disabled. Only `fiberPhase=active` counts as running. Details show evidence, impact, suggestions and coverage; use **Problems / risks only** to filter.
+
+Checks cover missing packages, explicit compatibility errors, exact entryId runtime rows and declared configuration overrides. A disabled row does not imply a broken package, while all rows disabled cannot prove successful loading. An override is a risk, not a proven conflict; similar names, shared modules or shared slots are not conflict evidence.
+
+Arrows, drag/drop, batches and Undo share preflight. Risks are reviewed together and checked again when continuing. Explicit missing/version/platform problems block enabling. A batch stops at the first result that is not applied. No automatic fixes, trial activation, credential reads, plugin function calls or inventory uploads. External programs, key validity, full dependency graphs and compatibility without an explicit error remain unverified.
+
+Read-only endpoints: `GET /plugin-packs/api/diagnostics` and `POST /plugin-packs/api/preflight` with `{changes:[{name,enabled}]}` and an `x-plugin-packs` header. Neither reads nor writes tag files.
+
+## Automatic tags and groups (0.3.0)
+
+- **Auto-classify** adds local rule-based labels to existing profile-installed packs. Newly installed packs are classified when the page reads state. Rules inspect names, descriptions and localized metadata only: no model calls, network or default catch-all labels.
+- Manual tags remain intact. Dismissed automatic labels are remembered across refresh and repeated classification; deleted categories are not recreated.
+- Drop a pack onto another card's grouping area to create a folder-like group, or into an existing group to move it there. Selecting packs offers a keyboard-friendly alternative. Groups are single-level, with one group per pack.
+- Groups share the original plugin columns: any enabled member places a group on the left; fully disabled or empty groups sit on the right. Mixed groups explicitly show partial enablement. The name input is always visible, even while collapsed; save with the button or Enter. Drag only the group icon across columns to run whole-group preflight, without interfering with name editing. Members are not duplicated in the loose columns. Search matches group names and members; expanding retains member details and independent switches.
+- Grouping, renaming, removing members and dissolving never change enablement or uninstall packages. Missing members remain recoverable and removable. Dissolving requires a second click.
+- Group switches target **all members**, including those hidden by filters. Confirmation reloads membership and reruns preflight; changed findings require review again. Missing/system members must be removed first, not silently skipped. Batches stop at the first non-applied result; they are not transactions and do not auto-roll back.
+- State v2 stores revision, groups, automatic tags and dismissal intent. Migration keeps `packs.json.v1.bak`; atomic backup publication requires same-directory hard-link support and safely refuses migration when unavailable. Revision checks reject stale writes; the queue coordinates this process only, not external editors or other processes. `POST /plugin-packs/api/state/actions` and the `plugin_packs` agent tool share metadata operations; neither provides risk approval or implicit enablement.
 
 ## Data
 
@@ -79,7 +99,9 @@ Tags and display names live in one plain JSON file:
 
 ```json
 {
-  "version": 1,
+  "version": 2,
+  "revision": 1,
+  "groups": [],
   "tags": [{ "id": "novel", "label": "Novel · Reading", "color": "#7B68EE" }],
   "packs": {
     "dsh-novel-writer": { "name": "Novel writing assistant", "tags": ["novel"] }
@@ -89,12 +111,12 @@ Tags and display names live in one plain JSON file:
 
 - Keys are **package names** (not entry ids), so tags survive reinstalls, upgrades and id changes.
 - A missing file is seeded with an empty pack map plus 7 **generic category tags** (Novel · Reading,
-  Search, UI, Security, Models, Memory, Tools). Which pack belongs to which tag is yours to decide —
+  Search, UI, Security, Models, Memory, Tools). Local rules suggest categories and you can edit them —
   **no packs are pre-filled**, because what someone installs is their private business and a management
   tool should not print "what the author used" into its source (a stranger's machine would not have
   those packs anyway).
-- **Hand-editable** — save and refresh. A malformed file is never silently discarded: it is renamed
-  aside (`packs.json.broken-<timestamp>`) and rebuilt.
+- **Hand-editable** — save and refresh. A malformed file is never silently discarded: it is backed up
+  (`packs.json.broken-<unique id>`) before rebuilding. Backup failure prevents overwriting the original.
 - Writes are atomic (temp file + rename) and serialized, so rapid tagging cannot lose updates.
 
 It only touches plugin-pack metadata — never sessions, prompts or credentials.
@@ -120,7 +142,7 @@ managers do); the row list on this page is read-only.
 | All | both of the above |
 | Show system core | read-only group: `dsh-base` / `dsh-web-app`, plus the **acp / headless / sdk-app / sdk-minimal** bundles, which belong to other run modes. Never toggleable, so a stray click cannot break the desktop profile |
 
-Bundles with `availability === "missing"` are not listed.
+Missing catalog-only candidates are hidden; missing selected or installed packages stay visible for diagnosis.
 
 ## Architecture
 
@@ -143,7 +165,7 @@ namespace:
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/plugin-packs/api/health` | self-check: `build` marker, route, data file path |
-| GET | `/plugin-packs/api/bundles` | pack list + row state (`{ bundles, plugins }`) |
+| GET | `/plugin-packs/api/bundles` | pack list + row state + same-snapshot report (`{ bundles, plugins, diagnostics }`) |
 | POST | `/plugin-packs/api/bundles/enabled` | whole-pack toggle, body `{ name, enabled }`, returns the official `ChangeResult`; requires `x-plugin-packs: 1` |
 | GET | `/plugin-packs/api/state` | read the tag document (seeded when absent) |
 | PUT | `/plugin-packs/api/state` | replace it wholesale; requires `x-plugin-packs: 1` |
@@ -160,14 +182,15 @@ namespace:
 |---|---|
 | No 「插件包」 tab | It lives on the **sidebar Plugins page**, not in Settings → Plugins. Also check that `dsh.profile.bundles` in `~/.dsh/profiles/<profile>/package.json` still lists `dsh-plugin-packs` — a deselected bundle takes the whole row (and its browser half) with it. Re-select it, then `Ctrl+F5` |
 | `HTTP 404 / response is not JSON` | The host half is not mounted. Run `curl 127.0.0.1:<port>/plugin-packs/api/health` and look for the `build` field |
-| Host code change not taking effect | Re-apply the row (`set_bundle` off and on) — **no dsh restart needed**; the `build` field tells you whether the new code is live |
+| Host code change not taking effect | Follow the installation result: replacing a loaded host module can require restarting DSH; toggling alone does not guarantee a fresh module. Verify the `build` field |
 | Switch reports "restart required" | That pack needs a `dsh web` restart to fully apply; the message says so |
 | Page behaviour did not change | Browser-half plugins fully unload only after a page refresh (`Ctrl+F5`); the host half applies immediately |
 
 ## Development
 
 ```powershell
-node scripts/render-check.mjs                          # offline render self-test (26 assertions)
+npm test                                              # state/health/tool and offline interaction tests
+node scripts/render-check.mjs                          # offline structure/behavior checks, not visual validation
 node scripts/render-check.mjs --profile <profile dir>  # borrow react/react-dom from that profile
 node --check lib/client.js && node --check lib/index.js
 ```

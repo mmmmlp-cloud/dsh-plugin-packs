@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![DeepSeek Harness](https://img.shields.io/badge/DeepSeek%20Harness-0.2.x-4C9AFF.svg)](https://github.com/deepseek-ai/deepseek-harness)
-[![version](https://img.shields.io/badge/version-v0.1.0-success.svg)](../../releases)
+[![version](https://img.shields.io/badge/version-v0.3.1-success.svg)](../../releases)
 [![JavaScript](https://img.shields.io/badge/JavaScript-ESM-f7df1e.svg)](lib/client.js)
 [![topic: dsh-plugin](https://img.shields.io/badge/topic-dsh--plugin-7B68EE.svg)](https://github.com/topics/dsh-plugin)
 
@@ -56,8 +56,30 @@ dsh plugin --profile web add ./dsh-plugin-packs
 - **搜索**：匹配中文名、包名、描述、版本、标签。
 - **范围**：我安装的（默认）/ 官方可选 / 全部；勾「显示系统核心」才露出只读区。
 - **详情**：展开看完整描述、来源、包内插件行及其运行状态，还能改中文名、勾标签。展开时该卡横向占满整行。
-- **反馈**：每次切换后底部提示区分四种真实结局——`已生效` / `需重启 DSH` / `被更高优先级覆盖` / `失败：<code>`，前两种带**撤销**。
+- **反馈**：每次切换后底部提示区分四种真实结局——`已生效` / `需重启 DSH` / `被更高优先级覆盖` / `失败：<code>`，已生效且确实发生变更时提供**撤销**（撤销也先预检）。
 - **记住位置**：点过「插件包」后，本次会话内切走再回来仍停在这一页。
+
+## 体检与风险提示（0.2.0）
+
+- 打开页面或点「检查全部」获取当前清单；卡片区分加载正常、有问题、有风险、未验证、未启用。仅 `fiberPhase=active` 计入运行中，不把 enabled 当作运行证明。
+- 「仅看问题 / 风险」筛出有明确错误或警告的包；详情展示依据、影响、建议与检查范围。
+- 只读检查包缺失、宿主兼容性错误、精确 entryId 的行状态与配置覆盖声明。部分行停用不等于包损坏；全部行停用时不显示“加载正常”。
+- 覆盖声明只是风险，不代表两个包一定冲突；同类、同模块或共用槽位不是冲突证据。
+- 箭头、拖放、批量与撤销共享操作前预检；风险汇总一次确认，明确版本/平台/缺包问题阻止启用。确认时重新检查，发现新风险要再次确认。批量遇到未生效结果立即停下，不继续盲切。
+- 不自动修复、不自动启用来测试、不读取凭据、不调用插件功能、不上传清单。外部程序、密钥、完整依赖图、无明确错误的版本兼容性未验证；“加载正常”不保证业务功能可用或绝对无冲突。
+- `GET /plugin-packs/api/diagnostics` 只读报告；`POST /plugin-packs/api/preflight` 请求 `{changes:[{name,enabled}]}`，需 `x-plugin-packs` 头；这两个接口不读写标签文件。
+
+## 自动标签与文件夹组合（0.3.0）
+
+- 点「自动分类」为现有用户安装包补充标签；后续新安装的包在读取页面时自动分类。规则只使用包名、描述及本地显示元数据，不调用模型、不联网；不认识就留空，可能多标签。
+- 手工标签始终保留；自动标签标有「自动」。手工移除后会保存抑制记录，刷新及再次分类都不会擅自补回。删除整个分类也不会自动重建。
+- 将插件拖到另一张卡片的「组成文件夹」区域建组；拖进组合卡片加入。也可勾选插件，填写组名创建，或选择已有组合加入。每个包只属于一个单层组合，加入新组会从旧组移出。
+- 组合卡片与普通插件混排在原有左右栏：任一成员启用就放左栏，全停用或空组放右栏；混合状态明确显示「部分启用 n/总数」。组合名输入框折叠时也可直接编辑，点保存或按 Enter 保存。拖动组合图标到另一栏执行整组预检切换；只有图标可拖，名称输入不会触发拖动。组内成员不在两栏重复显示，搜索组名或成员名均能找到组合，展开后保留成员详情、标签和独立启停。
+- 分组、改名、移出及解散都**不改变启停、不卸载包**。解散需再次点击确认；未知或已卸载成员也保留记录，可手动移出。
+- 「全部启用 / 全部停用」明确作用于完整组合，不受搜索/标签/范围筛选影响。确认时重新读取组成员并重跑预检；成员变化导致提示变化时再次确认。系统或缺失成员先移出，不能静默跳过。
+- 整组切换不是事务：遇到失败、被覆盖或需要重启就停止后续成员，并展示结果；不自动回滚其他包。已生效变更可以经预检撤销。
+- 状态升级为 v2（含 revision、groups、autoTags、suppressedTags）；迁移前将原件备份为 `packs.json.v1.bak`。标签保存采用最新版本与 revision 校验，过期页面拒写，避免覆盖分组。备份依赖同目录硬链接支持，不支持时安全拒绝迁移；写队列只协调本进程，不替代外部编辑器或多进程文件锁。
+- `POST /plugin-packs/api/state/actions` 提供 `auto-tag`、`group-create/add/remove/rename/dissolve`；需 `x-plugin-packs` 头。Agent 工具 `plugin_packs` 调用相同整理操作，不提供风险确认或隐式启停。
 
 ## 数据在哪
 
@@ -69,7 +91,9 @@ dsh plugin --profile web add ./dsh-plugin-packs
 
 ```json
 {
-  "version": 1,
+  "version": 2,
+  "revision": 1,
+  "groups": [],
   "tags": [{ "id": "novel", "label": "小说 · 阅读", "color": "#7B68EE" }],
   "packs": {
     "dsh-novel-writer": { "name": "小说写作助手", "tags": ["novel"] }
@@ -78,8 +102,8 @@ dsh plugin --profile web add ./dsh-plugin-packs
 ```
 
 - **键是包名**（不是 entry id）：重装、升级、换 id 都不丢标签。
-- 文件不存在时生成一份空表 + 7 个**通用分类标签**（小说·阅读 / 联网搜索 / 界面美化 / 安全·渗透 / 模型渠道 / 记忆·知识 / 工具·其它），具体哪个包属于哪类由你自己打——**出厂不预填任何包**：谁在用哪些插件属于使用者的私人信息，装一个管理工具不该顺手把"作者用过什么"印进代码里；何况陌生人机器上也没有那些包。
-- **可以手改**，改完刷新页面即生效；格式写错也不会静默丢数据——坏文件会被改名留底（`packs.json.broken-<时间戳>`）再重建。
+- 文件不存在时生成一份空表 + 7 个**通用分类标签**（小说·阅读 / 联网搜索 / 界面美化 / 安全·渗透 / 模型渠道 / 记忆·知识 / 工具·其它），具体包的分类由本地规则和你的手工标签共同决定——**出厂不预填任何包**：谁在用哪些插件属于使用者的私人信息，装一个管理工具不该顺手把"作者用过什么"印进代码里；何况陌生人机器上也没有那些包。
+- **可以手改**，改完刷新页面即生效；格式写错也不会静默丢数据——坏文件先完整备份（`packs.json.broken-<唯一标识>`）再重建；备份失败则拒绝覆盖原件。
 - 写入是原子写（临时文件 + rename）且串行化，连续点标签不会互相吞更新。
 
 **只与插件包相关，不碰会话、提示词、凭据。**
@@ -103,7 +127,7 @@ dsh plugin --profile web add ./dsh-plugin-packs
 | 全部 | 上面两者 |
 | 显示系统核心（勾选后） | 只读区：`dsh-base` / `dsh-web-app`，以及 **acp / headless / sdk-app / sdk-minimal** 这几种别的运行模式的包。一律不可切，避免误触改坏桌面档 |
 
-未安装（`availability === "missing"`）的包不显示。
+仅供安装的缺失候选包不显示；已选择或已安装但缺失的异常包保留可见，便于诊断。
 
 ## 架构
 
@@ -125,7 +149,7 @@ dsh-plugin-packs/
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | GET | `/plugin-packs/api/health` | 自检：`build` 标记、路由、数据文件路径 |
-| GET | `/plugin-packs/api/bundles` | 包清单 + 行状态（`{ bundles, plugins }`） |
+| GET | `/plugin-packs/api/bundles` | 包清单 + 行状态 + 同次快照体检（`{ bundles, plugins, diagnostics }`） |
 | POST | `/plugin-packs/api/bundles/enabled` | 整包启停，body `{ name, enabled }`，返回官方 `ChangeResult`；需 `x-plugin-packs: 1` 头 |
 | GET | `/plugin-packs/api/state` | 读标签文档（不存在则按出厂内容生成） |
 | PUT | `/plugin-packs/api/state` | 整份替换写入；需 `x-plugin-packs: 1` 头 |
@@ -138,14 +162,15 @@ dsh-plugin-packs/
 |---|---|
 | 标签条里没有「插件包」 | 它挂在**左侧栏「插件」**页里，不是「设置 → 插件」。先确认 `~/.dsh/profiles/<profile>/package.json` 的 `dsh.profile.bundles` 里还有 `dsh-plugin-packs`（被取消选择时这一行会整条消失）；恢复后 `Ctrl+F5` |
 | 页面报 `HTTP 404 / 响应不是 JSON` | 宿主 half 没挂上。`curl 127.0.0.1:<端口>/plugin-packs/api/health` 看 `build` 字段是否存在 |
-| 改了宿主代码没生效 | 重新应用这一行即可（`set_bundle` 关再开），**不必重启 DSH**；`health` 的 `build` 就是判断依据 |
+| 改了宿主代码没生效 | 按安装结果处理；更新已加载的宿主模块可能需要重启 DSH，不能仅靠关再开保证刷新模块；`health` 的 `build` 用于核实实际版本 |
 | 切换后"需重启" | 个别包（尤其宿主侧插件）要重启 `dsh web` 才完全生效，提示里会写 |
 | 切换后页面行为没变 | 浏览器 half 的插件完全卸载需要刷新页面（`Ctrl+F5`），宿主 half 是立即生效的 |
 
 ## 开发
 
 ```powershell
-node scripts/render-check.mjs                          # 离线渲染自检（26 条断言）
+npm test                                              # 状态/体检/工具及离线交互测试
+node scripts/render-check.mjs                          # 离线结构与交互自检（非视觉验收）
 node scripts/render-check.mjs --profile <profile 目录>  # 指定 profile 取 react/react-dom
 node --check lib/client.js && node --check lib/index.js
 ```

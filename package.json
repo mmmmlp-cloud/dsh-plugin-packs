@@ -1,7 +1,7 @@
 {
   "name": "dsh-plugin-packs",
-  "version": "0.1.0",
-  "description": "插件包管理器：把 DeepSeek Harness 已安装的插件包排成 Minecraft 资源包式的左右两栏（左「一起用」/右「未启用」），支持自定义标签分类、搜索与范围筛选；标签存文件而非 localStorage。",
+  "version": "0.3.1",
+  "description": "插件包管理器：把 DeepSeek Harness 已安装的插件包排成 Minecraft 资源包式的左右两栏（左「一起用」/右「未启用」），支持自定义标签分类、搜索与范围筛选、自动标签、拖拽组合与整组启停、只读体检及启停前风险提示；标签存文件而非 localStorage。",
   "type": "module",
   "license": "MIT",
   "author": "mmmmlp-cloud",
@@ -44,7 +44,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "node scripts/render-check.mjs"
+    "test": "node --test tests/health.test.mjs tests/state.test.mjs && node scripts/render-check.mjs"
   },
   "dsh": {
     "bundle": {

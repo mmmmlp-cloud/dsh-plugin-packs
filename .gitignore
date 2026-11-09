@@ -14,3 +14,6 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# 本地 npm 配置（令牌，绝不入库）
+.npmrc

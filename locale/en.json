@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Plugin Packs",
-    "description": "Arrange installed plugin packs into Enabled / Disabled columns (Minecraft resource-pack style) with custom tags for quick finding and whole-pack toggling."
+    "title": "Plugin packs",
+    "description": "Arrange installed plugin packs into Enabled / Disabled columns (Minecraft resource-pack style) with local automatic tags, drag-and-drop groups, whole-group switching, loading checks and risk preflight."
   }
 }
