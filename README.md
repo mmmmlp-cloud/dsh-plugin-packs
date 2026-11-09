@@ -13,6 +13,10 @@
 
 <img src="icon.svg" alt="插件包管理器图标" width="96">
 
+![插件包两栏界面：左栏「已启用·一起用」，右栏「未启用」，卡片挂标签，顶部可按标签筛选](https://raw.githubusercontent.com/mmmmlp-cloud/dsh-plugin-packs/main/docs/images/packs-overview.png)
+
+*界面示意（示例数据）：左栏 4 个正在一起用的包，右栏 4 个装好但未启用的包。*
+
 ## 它解决什么
 
 插件装到几十个之后，问题不再是"哪个插件叫什么"，而是**"我现在到底在跑什么"**——官方插件页是一张平铺的已安装清单，启用和停用的混在一起，靠记忆区分。
@@ -34,7 +38,10 @@
 ## 安装
 
 ```powershell
-# 官方 CLI（会走 pnpm 安装并选中 bundle）
+# npm 包名（推荐）
+dsh plugin --profile web add dsh-plugin-packs
+
+# 官方 CLI 也支持直接从 GitHub 装
 dsh plugin --profile web add github:mmmmlp-cloud/dsh-plugin-packs
 
 # 或本地源码

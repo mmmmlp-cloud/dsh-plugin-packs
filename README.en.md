@@ -14,6 +14,10 @@
 
 <img src="icon.svg" alt="Plugin Packs icon" width="96">
 
+![Two-column Plugin Packs view: enabled packs on the left, switched-off packs on the right, tags on each card, tag bar on top](https://raw.githubusercontent.com/mmmmlp-cloud/dsh-plugin-packs/main/docs/images/packs-overview.png)
+
+*UI preview (sample data): four packs running together on the left, four installed but switched off on the right.*
+
 ## What it solves
 
 Once you have dozens of plugins, the question stops being "what is this plugin called" and becomes
@@ -40,7 +44,10 @@ now". This plugin does the latter, and uses tags for the former.
 ## Install
 
 ```powershell
-# Official CLI (installs through pnpm and selects the bundle)
+# From npm (recommended)
+dsh plugin --profile web add dsh-plugin-packs
+
+# The official CLI can also install straight from GitHub
 dsh plugin --profile web add github:mmmmlp-cloud/dsh-plugin-packs
 
 # Or from a local checkout
