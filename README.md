@@ -1,6 +1,7 @@
 # dsh-plugin-packs · 插件包管理器
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![npm](https://img.shields.io/npm/v/dsh-plugin-packs.svg)](https://www.npmjs.com/package/dsh-plugin-packs)
 [![DeepSeek Harness](https://img.shields.io/badge/DeepSeek%20Harness-0.2.x-4C9AFF.svg)](https://github.com/deepseek-ai/deepseek-harness)
 [![version](https://img.shields.io/badge/version-v0.3.1-success.svg)](../../releases)
 [![JavaScript](https://img.shields.io/badge/JavaScript-ESM-f7df1e.svg)](lib/client.js)
